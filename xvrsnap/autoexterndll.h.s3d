@@ -1,0 +1,170 @@
+/**
+ * Pack Unpack XVR functions
+ * by Emanuele Ruffaldi 2007
+ *
+ * Just declare a _meta function in your external DLL returning function descriptions. The id of such function
+ * allows to differentiate between multiple submodules. When _meta returns the empty string no more id are tested
+ * e.g.
+extern "C" __declspec(dllexport) const char * _meta(int id)
+{
+    if(id == 0)
+	return "int packVector(string fmt,outstring dst_str, int dst_len, pfloat in_vector, int in_vector_len) // packs the vector array into the given string and returns length of the string\n"
+		"int unpackVector(string fmt, string src, int src_len, outpfloat out_vector, int out_vector_len) // unpacks\n"
+		"int calcSize(string fmt, bool is_pack) // computes the size of the string in output\n"
+		"int calcVectorSize(string fmt) // computes the size of the vector required for handling this unpack format\n"
+		"void unicode2ascii(string in_str, int in_length, int in_offset, outstring out_str, int out_length) // converts from unicode to ASCII\n";
+	else return "";
+}
+ * and then:
+ 	mydll = CVmExternDLLAuto("mydll.dll");	
+ */
+#ifndef AUTOEXTERNDLL_H
+#define AUTOEXTERNDLL_H
+ 
+/**
+ * argument conversion from string to CVmExternDLL parameter types
+ */
+function _autoInitArg(s)
+{
+    switch(s)
+    {
+    case "ptr": return C_INT; /* arg!!! */
+    case "bool": return C_INT; /* boolean */
+    case "int": return C_INT;
+    case "outstring":	/* reference to string */
+    case "string": return C_PSTR;
+    case "float": return C_FLOAT;
+    case "outpfloat": /* reference to vector */
+    case "outvector": /* reference to vector */
+    case "vector": 
+    case "pfloat": return C_PFLOAT;
+    case "void": return C_VOID;
+    case "bufobj": return C_BBUFFER_OBJ;
+    case "vrobj": return C_VRLIB_OBJ;
+    default:
+        OutputLN("unknown type <",s,">");
+        return -1;
+    }
+}
+
+/**
+ * Adds functions to the CVmExternDLL using the _meta function 
+ */
+function CVmExternDLLAuto(mydll)
+{
+	var dllname = "";	
+	var result = Void;
+	if(valtype(mydll) == "S")
+	{
+		dllname = mydll;		
+		mydll = CVmExternDLL(mydll);
+		result = mydll;
+	}
+		
+	// if(!mydll.__HasFunction("_meta")) return false;
+    mydll.__AddFunction(C_PSTR,"_meta",C_INT);
+	for(var id = 0; id < 100; id++)
+	{
+	    var meta = mydll._meta(id);
+	    if(meta == Void || meta == "")
+	    	break;
+
+	    OutputLN("\nDLL Auto Init:",dllname,"\n",meta,"\n");
+	    	    	    
+	    var targ = array(10); // function arguments
+	    foreach(var v in Split(meta,"\n"))
+	    {
+	    	if(len(v) == 0)
+	    		continue;
+	        if(v[0] == "\/\/")
+	        {
+	        	OutputLN(v);
+	            continue;
+	        }
+	        var acmt = Split(v,"\/\/");
+	        var cmt = "";
+	        v = acmt[0];
+	        if(len(acmt) > 1)
+	            cmt = acmt[1];
+	            
+	        // rettype name ( type name, ... )
+	        var i1 = -1,i2 = -1;
+	        for(var i = 0; i < len(v); i++)
+	        	if(v[i] == "(") { i1 = i; break;}
+	       	if(i1 < 0)
+	       	{
+	        	OutputLN(" missing ( in ", v);
+	        	continue;
+	       	}
+	       	
+	       	for(var i = i1+1; i < len(v); i++)
+	        	if(v[i] == ")") { i2 = i; break;}
+	       	if(i2 < 0)
+	       	{
+	        	OutputLN(" missing ) in ", v);
+	        	continue;
+	       	}
+	       	var a = Split(left(v,i1)," ");
+	        if(len(a) != 2)
+	        {
+	        	OutputLN(" no return type in ",v);
+	        	continue;
+	        }
+	        var rt = _autoInitArg(a[0]);
+	        if(rt < 0)
+	        {
+	        	OutputLN(" bad return type ",a[0]);
+	        	break;
+	        }
+	        var name = a[1];
+	        
+	        v = left(v,i2);
+	        v = right(v,len(v)-i1-1);
+	        a = Split(v,",");        
+	        
+	        // parse arguments, skipping names and validating type
+	        var targc = 0;
+	        for(var i = 0; i < len(a); i++)
+	        {
+	        	var p = a[i];
+	        	
+	        	// eat spaces befor and after! we need trim/strip!
+	        	i1 = 0;
+	        	for(var j = 0; j < len(p); j++) if(p[j] != " ") { i1 = j; break;} if(i1 != 0) { p = right(p, len(p)-i1);}
+	        	i2 = -1;
+	        	for(var j = len(p)-1; j >= 0; j--) if(p[j] != " ") { i2 = j; break; } if(i2 != -1) p = left(p,i2+1);
+	        	
+	        	var kn = split(p," ");        	// try argument
+	        	if(len(kn[0]) == 0)
+	        		continue;
+	        	targ[targc] = _autoInitArg(kn[0]);
+	        	if(targ[targc] < 0)
+	        	{
+	        		OutputLN(" bad parameter type in ",kn[0]);
+	        		targc  = -1;
+	        		break;
+	        	}
+	        	else
+	        		targc++;
+	        }
+	        switch(targc)
+	        {
+	        case 0: mydll.__AddFunction(rt,name); break;
+	        case 1: mydll.__AddFunction(rt,name, (targ[0])); break;
+	        case 2: mydll.__AddFunction(rt,name, (targ[0]),(targ[1])); break;
+	        case 3: mydll.__AddFunction(rt,name, (targ[0]),(targ[1]),(targ[2])); break;
+	        case 4: mydll.__AddFunction(rt,name, (targ[0]),(targ[1]),(targ[2]),(targ[3])); break;
+	        case 5: mydll.__AddFunction(rt,name, (targ[0]),(targ[1]),(targ[2]),(targ[3]),(targ[4])); break;
+	        case 6: mydll.__AddFunction(rt,name, (targ[0]),(targ[1]),(targ[2]),(targ[3]),(targ[4]),(targ[5])); break;
+	        case -1:
+	        	break;
+	        default:
+	            OutputLN(" too many parameters in meta ExternDLL!\n");
+	            break;
+	        }
+	    } 
+	}
+	return result;   
+}
+
+#endif

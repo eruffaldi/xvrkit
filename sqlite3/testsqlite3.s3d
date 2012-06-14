@@ -1,0 +1,21 @@
+#include <Script3d.h>
+#include "sqlite3.h.s3d"
+
+function OnInit()
+{
+	SetLocalDir();
+  var a = Sqlite3DB(":memory:");
+  if(!a.IsValid())
+	Quit();
+OutputLN("Created ",a.db);
+  a.exec("CREATE VIRTUAL TABLE item USING fts3(pid, text);");
+  a.exec("INSERT INTO item(pid, text) VALUES(53, 'SQLite is a software...');");
+  
+  var s = a.prepare("SELECT * FROM item WHERE text MATCH ':a';");
+  OutputLN("bound:",s.bind("a","sqlite"));  
+  OutputLN("bound:",s.bind(1,"sqlite"));  
+  while(s.step())
+  {
+	OutputLN("Result ",s.getArray());
+}
+}

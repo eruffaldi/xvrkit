@@ -1,0 +1,48 @@
+<html>
+	<script type="text/javascript">
+		function gup( name ){
+		  name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+		  var regexS = "[\\?&]"+name+"=([^&#]*)";
+		  var regex = new RegExp( regexS );
+		  var results = regex.exec( window.location.href );
+		  if( results == null )
+		  	switch(name){
+		  		case "engineVersion": return "0154"; break;
+		  		case "backgroundColor": return "FFFFFF"; break;
+				case 'scriptName': 
+				{
+					var url = window.location.pathname;
+					var filename = url.substring(url.lastIndexOf('/')+1);
+					scriptName = filename.replace('.htm','.bin'); // assume .s3d.htm
+					return scriptName;
+					}
+					
+		  		default: return ""; break;
+		  	}
+		  else
+			return results[1];
+		}
+		
+		function createxvrengine(){
+			var xvrObj = "<object id=\"XVRObj\" width=\"100%\" height=\"100%\" type=\"application/x-oleobject\" \
+						   classid=\"CLSID:5D589287-1496-4223-AE64-65FA078B5EAB\" \
+						   codebase=\"http://client.vrmedia.it/XVRPlayer.cab#Version=1,0,0,1000\">\
+						  <param name=\"ScriptName\" value=\"" + decodeURI(gup('scriptName')) + "\" /> \
+						  <param name=\"EngineVersion\" value=\"" + gup ('engineVersion') + "\" /> \
+						  <param name=\"BackgroundColor\" value=\"#" + gup('backgroundColor') + "\" /> \
+						  <param name=\"EngineParam\" value=\"" + gup ('engineParam') + "\" /> \
+						  </object>";
+			
+			document.getElementById('xvr_plugin_placeholder').innerHTML = xvrObj;
+		}
+	
+	window.onload = createxvrengine;
+		
+	</script>
+	<head>
+		<title>XVR</title>
+	</head>
+	<body style="background-color:#ffffff;margin:0px;padding:0px" scroll="no">
+		<div id="xvr_plugin_placeholder"></div>
+	</body>
+</html>

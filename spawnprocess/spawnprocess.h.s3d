@@ -1,0 +1,138 @@
+#ifndef SPAWNPROCES_H_S3D
+#define SPAWNPROCES_H_S3D
+
+var ker;
+var shell;
+
+// core functions
+function InitProcessSystem()
+{
+	 ker = CVmExternDLL("kernel32.dll");
+	 shell = CVmExternDLL("shell32.dll");
+	
+	ker.__AddFunction(C_INT,"CreateProcessA",C_PSTR,C_PSTR,C_INT,C_INT,C_INT,C_INT,C_INT,C_INT,C_PSTR,C_PSTR);
+	ker.__AddFunction(C_INT,"CloseHandle",C_INT);
+	ker.__AddFunction(C_INT,"GetLastError");
+	ker.__AddFunction(C_INT,"RtlMoveMemory","CopyMemoryi2s",C_PSTR,C_PINT,C_INT);
+	ker.__AddFunction(C_INT,"RtlMoveMemory","CopyMemorys2i",C_PINT,C_PSTR,C_INT);
+	ker.__AddFunction(C_INT,"GetExitCodeProcess",C_INT,C_PINT);
+	ker.__AddFunction(C_INT,"RtlZeroMemory",C_PSTR,C_INT);
+	ker.__AddFunction(C_INT,"WaitForSingleObject",C_INT,C_INT);
+	ker.__AddFunction(C_INT,"TerminateProcess",C_INT,C_INT); // by handle
+	
+	shell.__AddFunction(C_INT,"ShellExecuteA",C_INT,C_PSTR,C_PSTR,C_INT,C_INT);
+}
+
+// only when no control
+function ShellExecute(op,file,params)
+{
+	// last params
+	// hide=0
+	// maximize=3
+	// show=5
+	// shownormal=1
+	return shell.ShellExecuteA(0,op,file,params,0,5);
+}
+
+function str2i32(s)
+{
+	var i = 0;
+	ker.CopyMemorys2i(&i,&s,4);
+	return i;
+}
+
+function i322str(i)
+{
+	var s = Space(4);
+	ker.CopyMemoryi2s(&s,&i,4);
+	return s;
+}
+
+function ZeroStr(n)
+{
+	var s = Space(n);
+	ker.RtlZeroMemory(&s,n);
+	return s;
+	
+}
+
+
+function spsubstr(s, first, length)
+{
+	var ll = len(s);
+	if(length == Void)
+		length = ll-first;
+	else if(first+length > ll)
+		length = ll-first;	
+	if(first == 0)
+		return left(s,length);
+	else if(first+length == ll)
+		return right(s, length);
+	else
+	{
+		// TODO improve
+		return left(right(s, ll-first), length);
+	}
+}
+
+
+// pass filename (full exe path) then commandline
+// returns file handle to BE closed using CloseHandle
+function CreateProcess(filename,commandline,option)
+{
+	if(option == Void)
+		option = 0;
+	OutputLN(str2i32(i322str((100))));
+	var si = i322str(17*4) + ZeroStr(16*4); // first is the size of the file	
+	var pia = ZeroStr(4*4); // process,thread,pid,tid
+	OutputLN("Spawning...");
+	var h = ker.CreateProcessA(filename,commandline,0,0,0,0,0,0,&si,&pia);
+	if(h == 0)
+	{
+		OutputLN("Error ",ker.GetLastError());
+		return 0;
+	}
+		
+	// extract the rest and close the hthread
+	// hProcess
+	// hThread
+	// ..
+	var hThread = str2i32(spsubstr(pia,4,4));
+	var hProcess =str2i32(spsubstr(pia,0,4));
+	var pid =str2i32(spsubstr(pia,8,4));
+	ker.CloseHandle(hThread);
+	OutputLN("PID is ",pid);
+	return hProcess;
+}
+
+function GetExitCodeProcess(h)
+{
+	var i = 0;
+	ker.GetExitCodeProcess(h,&i);
+	return i;
+}
+
+function CloseHandle(h)
+{
+	return ker.CloseHandle(h);
+}
+
+// check if process terminated
+function WaitForProcess(h,time)
+{
+	if(time == Void)
+		time = -1;
+	// 0x00000080L abandoned
+	// 0 ok
+	// 0x00000102L timeout
+	// 0xFFFFFFFF failed
+	var q = ker.WaitForSingleObject(h,time);
+	
+	// ERROR_INVALID_HANDLE is 6
+	if(q == -1)
+	{
+	}
+	return q == 0;
+}
+
+#endif

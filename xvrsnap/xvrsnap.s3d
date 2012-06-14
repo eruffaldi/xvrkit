@@ -1,0 +1,69 @@
+/**
+ * XVR Snap Utility function
+ * Emanuele Ruffaldi 
+ * 
+ * Easy to use!
+ *
+ * OnDownload
+ *		FileDownload("xvrsnap.dll")
+ * OnInit
+ *		xvrsnap()  [Only necessary in the case of a SetCurrentDir]
+ * Use!
+ * 1) Snap to a PNG file.
+ *    File name is relative to current path
+ *    xvrsnap("prefix") => saves into a PNG called "prefix.png"
+ *    Optionally modify the xvrsnappath
+ *    snapLastFormat() => "png"
+ *    snapLastName() => last name generated
+ * 2) Snap to Clipboard xvrsnap("")
+ *    snapLastFormat() => "bmp"
+ *    snapLastName() => "<clipboard>"
+ * 3) Snap to Buffer as RGBA
+ *    snapLastName() => "<memory>"
+ *    snapInfo(SNAPINFO_WIDTH)
+ *    snapInfo(SNAPINFO_HEIGHT)
+ *    snapInfo(SNAPINFO_SIZE)
+ *    snapLastFormat() => "RGBA"
+ *    snapData(data,size)
+ */
+var xvrsnappath = "";
+
+#define SNAPINFO_WIDTH 0
+#define SNAPINFO_HEIGHT 1
+#define SNAPINFO_SIZE 2
+
+static var xvrsnapper;
+static var xvrsnappermissing = false;
+
+function xvrsnapinit()
+{
+	if(xvrsnapper == Void)
+	{
+		xvrsnapper = CVmExternDLL("xvrsnap.dll",true);
+        if(xvrsnapper == Void)
+        {
+            xvrsnappermissing = true;
+            return;
+        }
+		xvrsnapper.__AddFunction(C_VOID,"snap",C_PCHAR);
+		xvrsnapper.__AddFunction(C_PCHAR,"snapLastFormat");
+		xvrsnapper.__AddFunction(C_PCHAR,"snapLastName");
+		xvrsnapper.__AddFunction(C_INT,"snapData",C_PCHAR,C_INT);
+		xvrsnapper.__AddFunction(C_INT,"snapInfo",C_INT);	
+	}
+}
+
+function xvrsnap(filename)
+{
+    if(xvrsnappermissing)
+        return "";
+	xvrsnapinit();
+	if(xvrsnapper == Void)
+		return;
+	if(filename == Void)
+		return;
+	else if(len(filename) > 0)
+		filename = xvrsnappath + filename;
+	xvrsnapper.snap(filename);
+}
+

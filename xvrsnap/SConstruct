@@ -1,0 +1,6 @@
+
+env = Environment(CXXFLAGS='/GX /O2');
+
+env.XVR("xvrsnap.s3d");
+env.SharedLibrary("xvrsnap.cpp"); # add /GX 
+# env.UPX

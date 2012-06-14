@@ -1,0 +1,2147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcc-snippets-package version="2.5">
+  <snippet>
+    <category>Geometry</category>
+    <name>Get Mesh Geometry</name>
+    <tag>CVmNewMesh</tag>
+    <tag>mesh</tag>
+    <syntax />
+    <code>function GetMeshData(gmesh)
+{
+       var subSetNumber;
+       var vertexCount, triangleCount;
+       gmesh.getInformation(&amp;subSetNumber, &amp;vertexCount, &amp;triangleCount);
+       var vertex = vector(vertexCount * 3);
+       var index = space(triangleCount*3*4); 
+       gmesh.GetMeshData(&amp;vertex, &amp;index);
+       return { vertex,vertexCount,index,triangleCount};
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Geometry</category>
+    <name>Ray Sphere Intersection</name>
+    <tag>intersection</tag>
+    <tag>ray</tag>
+    <tag>sphere</tag>
+    <syntax />
+    <code>//Intersezione tra un raggio e una sfera
+// o = origine del raggio
+// d = direzione del raggio (normalizzata)
+// c = centro della sfera
+// r = raggio della sfera
+// ritorna true se il raggio interseca la sfera
+// false altrimenti
+function raySphereIntersection(o, d, c, r)
+{
+	var dist = c - o;
+	var alpha = dist * d;
+	var beta = dist * dist - r * r;
+	if(alpha * alpha &gt; beta)
+		return true;
+	return false;
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Geometry</category>
+    <name>Two Segments Intersection</name>
+    <tag>intersection</tag>
+    <tag>segment</tag>
+    <syntax />
+    <code>// check che intersection point between two segment
+// return 0 if no point found
+// return 1 if found a point
+// return 2 if the two segment have infinite point in common
+function segmentCollisionTest2D(pa0, pa1, pb0, pb1, solution){
+	var n = norm(pa1 - pa0);
+	n = n.yx;
+	n.y = -n.y;
+	
+	// both point on the same side, no collision possible
+	if(sign(norm(pb0-pa0) * n) == sign(norm(pb1-pa0) * n))
+		return 0;
+
+	var x, y;
+	if(pa1.x != pa0.x &amp;&amp; pb1.x != pb0.x){
+		var mA = (pa1.y - pa0.y) / (pa1.x - pa0.x);
+		var mB = (pb1.y - pb0.y) / (pb1.x - pb0.x);
+	
+		// same slope the lines are coincident or no solution
+		if(mA != mB){
+			x = (pa0.y - pb0.y - ma* pa0.x + mb * pb0.x) / (mB - mA);
+			if(pa0.x &lt; pa1.x){					// bound check
+				if(x &lt; pa0.x || x &gt; pa1.x)
+					return 0;
+			}else{
+				if(x &lt; pa1.x || x &gt; pa0.x)
+					return 0;
+			}
+			y = pb0.y + mB * (x - pb0.x);
+			aadd(solution,[x, y]);
+			return 1;
+		}
+		if(pb0.y == pa0.y + mA*(pb0.x - pa0.x)){
+			var temp;
+			if(pa0.x &gt; pa1.x){
+				temp = pa0;
+				pa0 = pa1;
+				pa1 = temp;
+			}
+			if(pb0.x &gt; pb1.x){
+				temp = pb0;
+				pb0 = pb1;
+				pb1 = temp;
+			}
+			// 2 point bound check
+			if(pa0.x &lt;= pb0.x){
+				if(pa1.x &lt; pb0.x)	//segment are disgiunted
+					return 0;
+				if(pa1.x &gt; pb0.x){
+					if(pa1.x &lt;= pb1.x){
+						aadd(solution, pb0);
+						aadd(solution, pa0);
+						return 2;
+					}else{
+						aadd(solution, pb0);
+						aadd(solution, pb1);
+						return 2;
+					}
+				}
+				//only one point in common
+				aadd(solution, pa1);
+				return 1;
+			}else{
+				if(pb1.x &lt; pa0.x)
+					return 0;
+				if(pb1.x &gt; pa0.x){
+					if(pb1.x &lt;= pa1.x){
+						aadd(solution, pa0);
+						aadd(solution, pb1);
+						return 2;
+					}else{
+						aadd(solution, pa0);
+						aadd(solution, pa1);
+						return 2;
+					}
+				}
+				aadd(solution, pa0);
+				return 1;
+			}
+		}
+		return 0;
+	}else{	// vertical lines
+		if(pa1.x == pa0.x &amp;&amp; pb1.x == pb0.x){	// both vertical O_O
+			if(pa1.x == pb1.x){
+				aadd(solution, pa0);
+				aadd(solution, pa1);
+				return 2;
+			}			
+			return 0;
+		}
+		if(pa1.x == pa0.x &amp;&amp; pb1.x != pb0.x){	// only the first line vertical
+			var mB = (pb1.y - pb0.y) / (pb1.x - pb0.x);
+			x = pa0.x;
+			y = pb0.y + mB * (x - pb0.x);
+			if(pa0.y &lt; pa1.y){				// bound check
+				if(y &lt; pa0.y || y &gt; pa1.y)
+					return 0;
+			}else{
+				if(y &lt; pa1.y || y &gt; pa0.y)
+					return 0;
+			}
+		}else{
+			var mA = (pa1.y - pa0.y) / (pa1.x - pa0.x);
+			x = pb0.x;
+			y = pa0.y + mA * (x - pa0.x);
+			if(pa0.x &lt; pa1.x){				// bound check
+				if(x &lt; pa0.x || x &gt; pa1.x)
+					return 0;
+			}else{
+				if(x &lt; pa1.x || x &gt; pa0.x)
+					return 0;
+			}
+		}
+		aadd(solution, [x, y]);
+		return 1;
+	}
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Geometry</category>
+    <name>Spline</name>
+    <tag>curve</tag>
+    <tag>spline</tag>
+    <syntax />
+    <code>/**
+ * Splines for XVR by Emanuele Ruffaldi:
+ *
+ * Usage:
+ *  // Initialize the spline with four points where x0,y0 and x3,y3 are begin and end
+ 	var s = spline_init([x0,y0],[x1,y1],[x2,y2],[x3,y3]);	
+ 	// Run decompose for creating a spline with the given precision
+	spline_decompose(s, 0.001);
+	// add the last point
+	spline_add(s[3]);
+ *
+ *  Requires: LineMaker defined as a drawing function at x,y
+ */
+#ifndef SPLINE_H
+#define SPLINE_H
+function LineMaker(x,y);
+
+function lerp(a, b, s)
+{
+	return a*(1-s)+b*s;
+}
+
+function max(a,b)
+{
+	return a &gt; b ? a : b;
+}
+
+function lerp_half(a, b)
+{
+	return (a+b)*0.5;
+}
+
+function length2(v)
+{
+	var dx = v[0];
+	var dy = v[1];
+	return dx*dx+dy*dy;
+}
+
+
+
+// spline for XVR
+// by Emanuele Ruffaldi
+// Adapted from Cairo
+//extern function ceil;
+var spline_count = 0;
+var spline_depth = 0;
+
+function spline_casteljau(spline, spline1,spline2)
+{
+	var ab,bc,cd;
+	var abbc,bccd;
+	var final;
+	ab = lerp_half(spline[0],spline[1]);
+	bc = lerp_half(spline[1],spline[2]);
+	cd = lerp_half(spline[2],spline[3]);
+	abbc = lerp_half(ab,bc);
+	bccd = lerp_half(bc,cd);
+	final= lerp_half(abbc,bccd);
+	
+	spline1 = {
+		spline[0],
+		ab,
+		abbc,
+		final};
+	spline2 = {
+		final,
+		bccd,
+		cd,
+		spline[3]};
+}
+
+function spline_add(pt)
+{
+	LineMaker(pt[0],pt[1]);
+	spline_count++;
+}
+
+function slope_init(slope, a, b)
+{
+	slope = b-a;
+}
+
+// a is begin
+// b is cp1
+// c is cp2
+// d is end
+function spline_init(a,b,c,d)
+{
+	var r = {a,b,c,d,[0,0]};
+	spline_depth = 0;
+	
+	 if (a.x != b.x || a.y != b.y) {
+		slope_init (&amp;r[4], &amp;r[0], &amp;r[1]);
+	    } else if (a.x != c.x || a.y != c.y) {
+		slope_init (&amp;r[4], &amp;r[0], &amp;r[2]);
+	    } else if (a.x != d.x || a.y != d.y) {
+		slope_init (&amp;r[4], &amp;r[0], &amp;r[3]);
+	    } else {
+		//NULL;
+	    }
+	
+	    if (c.x != d.x || c.y != d.y) {
+		slope_init (&amp;r[4], &amp;r[2], &amp;r[3]);
+	    } else if (b.x != d.x || b.y != d.y) {
+		slope_init (&amp;r[4], &amp;r[1], &amp;r[3]);
+	    } else {
+		slope_init (&amp;r[4], &amp;r[0], &amp;r[3]);
+	    }
+	    
+	return r;
+}
+
+function spline_pointsegDistance(p,p1,p2)
+{
+	var d = p2-p1;
+
+    if (d.x == 0 &amp;&amp; d.y == 0)
+		return length2 (p-p1);
+
+    var pd = p-p1;
+    var u = (pd.x * d.x + pd.y * d.y) / length2(d);
+
+    if (u &lt;= 0)
+		return length2 (p-p1);
+    else if (u &gt;= 1)
+		return length2 (p-p2);
+
+    var px = [p1.x + u * (p2.x - p1.x),p1.y + u * (p2.y - p1.y)];
+
+    return length2 (p-px);
+}
+
+/// upper bound of the spline approx
+function spline_error(spline)
+{
+	var berr = spline_pointsegDistance(spline[1],spline[0],spline[3]);
+	var cerr = spline_pointsegDistance(spline[2],spline[0],spline[3]);
+	return max(berr,cerr);		
+}
+
+function spline_decompose(spline, tolerance_squared)
+{
+	var s1,s2;
+	var e = spline_error(spline);
+	
+	if(e &lt; tolerance_squared || spline_depth &gt; 50)
+	{
+		//Output("reject ", e,"\n");
+		spline_add(spline[0]);
+		return ;
+	}
+	spline_depth++;
+
+	
+	spline_casteljau(spline,&amp;s1,&amp;s2);
+	//Output("passed ", e," =&gt; ", s1, " " , s2, "\n");
+	spline_decompose(s1,tolerance_squared);
+	spline_decompose(s2,tolerance_squared);		
+}
+
+#endif</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Graphics</category>
+    <name>XVR Logo Removal</name>
+    <tag>logo</tag>
+    <syntax />
+    <code>function OnFrame()
+{
+
+	static var sh;
+	if(sh == Void)
+	{
+		sh = CVmShaderProgram("void main() { gl_Position = ftransform(); }","void main() { discard; }",true);
+		sh.Activate(true);
+	}
+	sh.Stop();
+	...	
+	SceneEnd();
+	sh.Start();
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Graphics</category>
+    <name>Draw Bitmap</name>
+    <tag>bitmap</tag>
+    <syntax />
+    <code>function DrawBitmap(x,y,xf,yf,tex) //this function draws the panorama
+{
+	glDepthMask(0);
+	glDisable(GL_DEPTH_TEST);
+	glMatrixMode(GL_PROJECTION);
+	glpushmatrix();
+	glLoadIdentity();
+	glMatrixMode(GL_MODELVIEW);
+	glpushmatrix();
+	glLoadIdentity();
+	glDisable(GL_LIGHTING);
+	setactivetexture(tex);
+	glBegin(GL_QUADS);
+			gltexcoord(1,0);
+			glVertex(xf,yf,-0);
+			gltexcoord(0,0);
+			glVertex(x,yf,-0);	
+			gltexcoord(0,1);
+			glVertex(x,y,-0);
+			gltexcoord(1,1);
+			glVertex(xf,y,-0);
+	glEnd();
+	glDepthMask(1);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_LIGHTING);
+	glMatrixMode(GL_PROJECTION);
+	glpopmatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glpopmatrix();
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Graphics</category>
+    <name>Draw Grid</name>
+    <tag>grid</tag>
+    <syntax />
+    <code>function DrawGrid(col, size)
+{
+	/* let's not mess up current OpenGL status */
+	glPushAttrib(GL_LIGHTING_BIT | GL_LINE_BIT | GL_CURRENT_BIT);
+	
+	glLineWidth(1);
+	glDisable(GL_LIGHTING);
+	glColor(col);
+	var max = size / 2.0;
+	var min = -max;	
+	var step = size / 10.0;
+	
+	glBegin(GL_LINES);
+		for (var i = min; i &lt;= max; i += step)
+		{
+			glVertex(i, 0, max);
+			glVertex(i, 0, min);
+			
+			glVertex(max, 0, i);
+			glVertex(min, 0, i);
+		}
+	glEnd();
+	
+	/* polite restoration of previous OpenGL status */
+	glPopAttrib();
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Graphics</category>
+    <name>World Metrics Vision</name>
+    <tag>camera</tag>
+    <tag>stereo</tag>
+    <tag>sync</tag>
+    <syntax />
+    <code>SceneSetParam(VR_VERTICAL_SYNC ,1);
+	SceneSetParam(VR_HEADTRACKER ,1); // metrics
+	SceneSetParam(VR_EYE_SEPARATION ,0);
+	SetFrameRate(60);</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Graphics</category>
+    <name>Print Shader Info</name>
+    <tag>shaders</tag>
+    <syntax />
+    <code>function PrintShaderAttributes(shader)
+{
+    var n  = shader.GetAttributeCount();
+    for(var i = 0; i &lt; n; i++)
+    {
+        var xname = "",xtype,xnametype,xsize;
+        shader.GetAttribute(i, &amp;xname, &amp;xtype,&amp;xnametype,&amp;xsize);
+        OutputLN(" ",i," ",xname," ",xtype," ",xnametype," ",xsize," index:",shader.GetAttributeIndex(xname));
+    }
+}
+
+function PrintShaderUniforms(shader)
+{
+    var n  = shader.GetUniformCount();
+    for(var i = 0; i &lt; n; i++)
+    {
+        var xname = "",xtype,xnametype,xsize;
+        shader.GetUniform(i, &amp;xname, &amp;xtype,&amp;xnametype,&amp;xsize);
+        OutputLN(" ",i," ",xname," ",xtype," ",xnametype," ",xsize);
+    }
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Graphics</category>
+    <name>Real Screen Size</name>
+    <tag>screen</tag>
+    <tag>window</tag>
+    <syntax />
+    <code>var gdi = CVmExternDll("gdi32.dll");
+    var user = CVmExternDll("user32.dll");
+    gdi.__AddFunction(C_INT,"GetDeviceCaps",C_INT,C_INT);
+    user.__AddFunction(C_VOID,"ReleaseDC",C_INT);
+    user.__AddFunction(C_INT,"GetForegroundWindow",C_VOID);
+    user.__AddFunction(C_INT,"GetDC",C_INT);
+
+    var dc = user.GetDC(user.GetForegroundWindow());
+    //var dc = user.GetDC(0);
+    var sx = gdi.GetDeviceCaps(dc,4)/1000.0; // 8 for pixels
+    var sy = gdi.GetDeviceCaps(dc,6)/1000.0; // 10 for pixels
+    OutputLN("Real Screen X:",sx," Y:",sy);
+    user.ReleaseDC(dc);
+    
+    SceneSetParam(VR_SCREEN_SIZE, sx,sy);
+    
+    SceneSetParam(VR_HEADTRACKER, 1);
+    var z = 0.0001; // small value higher than ... SCENE_NEAR
+    SceneSetParam(VR_TRACKER_POSITION,0.0,0.0,z);
+    SceneSetParam(VR_TRACKER_ORIENTATION, 0.0, 0.0, 0.0);
+    SceneSetParam(VR_EYE_SEPARATION, 0.0000);</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Graphics</category>
+    <name>XVR Render Window</name>
+    <tag>win32</tag>
+    <tag>window</tag>
+    <syntax />
+    <code>function GetRenderWindow()
+{
+    var user = CVmExternDll("user32.dll");
+    var ogl = CVmExternDll("opengl32.dll");
+    user.__AddFunction(C_INT,"WindowFromDC",C_INT);
+    ogl.__AddFunction(C_INT,"wglGetCurrentDC");
+    return user.WindowFromDC(ogl.wglGetCurrentDC());
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>I/O</category>
+    <name>File Reading using XVR code</name>
+    <tag>file</tag>
+    <syntax />
+    <code>#include &lt;Script3d.h&gt;
+
+var kerfile;
+
+function InitFiles()
+{
+	if(ker == Void)
+	{
+		ker = CVmExternDll("kernel32.dll");
+		kerfile.__AddFunction(C_INT,"CreateFileA",C_PSTR,C_INT,C_INT,C_INT,C_INT,C_INT,C_INT);
+		kerfile.__AddFunction(C_INT,"CloseHandle",C_INT);
+		kerfile.__AddFunction(C_INT,"WriteFile",C_INT,C_PSTR,C_INT,C_PINT,C_INT);
+		kerfile.__AddFunction(C_INT,"ReadFile",C_INT,C_PSTR,C_INT,C_PINT,C_INT);
+		kerfile.__AddFunction(C_INT,"FlushFileBuffers",C_INT);
+		kerfile.__AddFunction(C_INT,"SetFilePointer",C_INT,C_INT,C_INT,C_INT);		
+		kerfile.__AddFunction(C_INT,"GetLastError");		
+	}
+}
+
+/**
+ * XVRFile by Emanuele Ruffaldi 2012/02/27
+ */
+class XVRFile
+{
+	var h;
+	var buf;
+	
+	XVRFile(name,mode);
+	 close();	
+	 write(text);
+	 flush();
+	 read(count);	
+	 seek(off,rel);
+};
+
+
+	function XVRFile::XVRFile(name,mode)
+	{
+		InitFiles();
+		// mode:
+		// GENERIC_READ 0x80000000
+		// GENERIC_WRITE 0x40000000
+		// FILE_READ_DATA 1
+		// FILE_APPEND_DATA 4
+		// FILE_WRITE_DATA 2
+		// 
+		// sharing:
+		// Allow = 0, Write=2,Read=1,Delete=4
+		// 
+		// opening:
+		// CreateAlways=4,CreateNew=1,OpenAlways=4,OpenExisting=3,TruncateExisting=5
+		//
+		// file type
+		// Normal=0x80
+		// AvoidCache=0x80000000
+		var oc;
+		var ft = 0x80;
+		var sh = 7;
+		// cases: action if exist / action if not exist
+		if(mode == "r") // open/exist
+		{
+			mode = 1;
+			oc = 3;
+			sh = 0;
+		}
+		else if(mode == "r+") // open/fail and optionally write
+		{
+			mode = 0xC0000000;
+			oc = 3;
+		}
+		else if(mode == "w") // truncate/create
+		{
+			mode = 0x40000000;
+			oc  = 2;
+		}
+		else if(mode == "a") // open/create and append
+		{
+			mode = 4;
+			oc = 4;
+		}
+		else if(mode == "w+") // truncate/create
+		{
+			mode = 4;
+			oc = 2;
+		}
+		else
+		{
+			OutputLN("Unknown mode");
+			return;
+		}
+		OutputLN("Result ",name," ",mode," ",oc);
+		h = kerfile.CreateFileA(name,mode,sh,0,oc,ft,0);
+		if(h == -1)
+			OutputLN("Error file:",kerfile.GetLastError());
+	}
+	
+	function XVRFile::~XVRFile()
+	{
+		close(h);
+	}
+	
+	function  XVRFile::close()
+	{
+		kerfile.CloseHandle(h);
+		h = -1;
+	}
+	
+	function  XVRFile::write(text)
+	{
+		var r = 0;
+		kerfile.WriteFile(h,text,len(text),&amp;r,0);
+		return r;
+	}
+	
+	function  XVRFile::flush()
+	{
+		kerfile.FlushFileBuffers(h);
+	}
+	
+	function  XVRFile::read(count)
+	{
+		if(buf == Void || len(buf) &lt; count)
+			buf = space(count);
+		var r = 0;
+		kerfile.ReadFile(h,&amp;buf,count,&amp;r,0);
+		return r != len(buf) ? left(buf,r) : buf;
+	}
+	
+	function  XVRFile::seek(off,rel)
+	{
+		kerfile.SetFilePointer(h,off,rel == Void || rel &lt; 0 ? 0 : rel == 0 ? 1 : 2);
+	}
+
+function OnInit()
+{	
+	SetLocalDir(".");
+	var b = XVRFile("a.txt","r");
+	OutputLN("handle read:",b.h);
+	OutputLN("read:",b.read(128));
+	b.close();
+	
+	var a = XVRFile("a.txt","w");
+	OutputLN("handle:",a.h);
+	OutputLN("written:",a.write("ciao"));
+	a.close();
+	
+	b = XVRFile("a.txt","r");
+	OutputLN("handle read:",b.h);
+	OutputLN("read:",b.read(128));
+	b.close();
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Input</category>
+    <name>Color Selection</name>
+    <tag>color</tag>
+    <tag>selection</tag>
+    <syntax />
+    <code>#ifndef COLORSELECTION_H_S3D
+#define COLORSELECTION_H_S3D
+
+/* ================================================= 
+ * Color Selection
+ * Few functions for simplifing the color based selection
+ * 
+ * Original code from Franco Tecchia
+ * TODO: test
+ */
+
+/// returns the color associated to the selection
+/// maximum elements: 32*32
+/// 	glPolygonOffset(1.0,-0.0);
+function colorSelectionGetColor(selectionId)
+{
+	var c =
+	[8.0*(selectionId%32)/255.0,8.0*(int(selectionId/32.0))/255.0,0];
+	//OutputLN("Selection Color ", selectionId, " is ", c, " == ", c*255);
+	return c;
+
+} 
+
+function clamp(a,mi,ma)
+{
+	return a &lt; mi ? a: a &gt; ma ? ma: a;
+}
+
+/// returns the index from the pixel
+function colorSelectionGetIndex(mouse, viewport,size)
+{
+	if(size == Void || size == 1)
+	{
+		var pixel = glReadPixels(mouse.x,viewport[3]-mouse.y,1,1,GL_RGBA,GL_UNSIGNED_BYTE);
+		var r = asc(pixel[0])/8+32*asc(pixel[1])/8;
+		//OutputLN("Pick Color is ", asc(pixel[0]), " ", asc(pixel[1])," =&gt; ", r,"\n");
+		if(asc(pixel[2])==0) 
+			return r;
+	}
+	else
+	{
+		var x = clamp(mouse.x-size/2,0,viewport[2]);
+		var y = clamp(viewport[3]-mouse.y-size/2,0,viewport[3]);
+		var pixel = glReadPixels(x,y,size,size,GL_RGBA,GL_UNSIGNED_BYTE);
+		var n = len(pixel);
+		for(var i = 0; i &lt; n; i+= 4)
+		{
+			if(asc(pixel[i+2]) != 0)
+				continue;
+			return asc(pixel[i+0])/8+32*asc(pixel[i+1])/8;
+		}
+	}
+	return 0;
+}
+
+/// draw an object using the specified color selection
+/// All the object will be drawn using the specified color!
+function colorSelectionDrawObj(obj,color)
+{
+	static var selMaterial;
+	
+	if(selMaterial == Void)
+	{
+		selMaterial = CVmMaterial();
+		var black = [0,0,0];
+		selMaterial.Ambient = black;
+		selMaterial.Diffuse = black;
+		selMaterial.Emission = black;
+		selMaterial.Specular = black;
+		selMaterial.Shininess = 0;
+	}
+			
+	selMaterial.Emission = color;
+	obj.ForceMaterial(selMaterial);
+	obj.Draw(VR_FLATSHADING|VR_NO_TEXTURE,0);
+	obj.ForceMaterial(NULL);
+}
+
+#endif</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Input</category>
+    <name>Single Object Selection</name>
+    <tag>cvmobj</tag>
+    <tag>selection</tag>
+    <syntax />
+    <code>//-------------------------------------------
+function Selection(vr_obj, mode, compID)
+//-------------------------------------------
+{
+	var retval;	
+	var viewport = array(4);
+	var winx,winy;
+
+	static var p0 = [0.0,0.0,0.0];
+	static var p1 = [0.0,0.0,0.0];
+	var pInt = [0.0,0.0,0.0];
+	var nrml = [0.0,0.0,0.0];
+	var n_tr;	
+//	var width, height;
+
+	
+	viewport = glget(GL_VIEWPORT);
+	
+	winx = Mouse.X;						//x*1.0f/width;
+	winy = viewport[3] - 1 - Mouse.Y;	//1.0f - y*1.0f/height;
+
+	var vec0 = [0.0,0.0,0.0];
+	var vec1 = [0.0,0.0,0.0];
+	vec0[0] = winx;
+	vec0[1] = winy ;
+	vec0[2] = 0.0;
+	vec1[0] = winx;
+	vec1[1] = winy ;
+	vec1[2] = 1.0;
+	
+	p0 = gluUnProject(vec0);
+	p1 = gluUnProject(vec1);
+	
+	if ( vr_obj.IsColliding(p0, p1, &amp;pInt, &amp;nrml, &amp;n_tr, &amp;compID) )	
+	{
+		retval = true;
+		if (compID == -1 &amp;&amp; vr_obj.GetMesh() !=  VOID)
+			compID = vr_obj.GetMesh().GetSubSetFromTriIndex(n_Tr); 
+	}
+	else
+		retval = false;
+	
+	
+	if ((mode == SEL_PICK || mode == SEL_MOVE) &amp;&amp; !Mouse.ButtonL)
+		retval = false;
+
+				
+	if (retval &amp;&amp; mode == SEL_MOVE)
+	{	
+		p0 = gluProject(pInt);		//	p0:   punto di intersezione in screen coordinates		
+		vec0[2] = p0[2];			//  vec0: mouse pointer in screen coordinates con z = quella di p0	
+		p0 = gluUnProject(vec0);	//  p0:	  vec0 in world coordinates	
+		trace(p0);
+		
+		vr_obj.SetPosition(p0);
+	}
+	
+	return retval;
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Input</category>
+    <name>Single Object Selection Basic</name>
+    <tag>camera</tag>
+    <tag>ray</tag>
+    <tag>selection</tag>
+    <syntax />
+    <code>function Selection(vr_obj,pInt, compID)
+	//-------------------------------------------
+	{
+		var retval;	
+		var viewport = array(4);
+		var winx,winy;
+		pInt = [0.0,0.0,0.0];
+		var nrml = [0.0,0.0,0.0];
+		var n_tr;	
+		
+		viewport = glget(GL_VIEWPORT);
+		// t,l, w, h
+		
+		winx = Mouse.X;						//x*1.0f/width;
+		winy = viewport[3] - 1 - Mouse.Y;	//1.0f - y*1.0f/height;
+
+		var vec0 = [0.0,0.0,0.0];
+		var vec1 = [0.0,0.0,0.0];
+		vec0[0] = winx;
+		vec0[1] = winy ;
+		vec0[2] = 0.0;
+		vec1[0] = winx;
+		vec1[1] = winy ;
+		vec1[2] = 1.0;
+		
+		var p0 = gluUnProject(vec0);
+		var p1 = gluUnProject(vec1);
+		
+		if ( vr_obj.IsColliding(p0, p1, &amp;pInt, &amp;nrml, &amp;n_tr, &amp;compID) )	
+		{
+			retval = true;
+			if (compID == -1 &amp;&amp; vr_obj.GetMesh() !=  VOID)
+				compID = vr_obj.GetMesh().GetSubSetFromTriIndex(n_Tr); 
+		}
+		else
+			retval = false;
+		return retval;
+	}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Input</category>
+    <name>KeyStatus</name>
+    <tag>keyboard</tag>
+    <syntax />
+    <code>//----------------------------------------------------------------------
+function KeyStatus(keycode)
+//----------------------------------------------------------------------
+{
+	if (valtype(keycode) == "S")
+	{
+		keycode = asc(keycode);
+	}
+		
+	static var keys_stati = vector(255);
+	if (KeyPressed(keycode))
+	{	
+		if (keys_stati[keycode] == 0.0)
+		{
+			keys_stati[keycode] = 1.0;
+			return true;
+			
+		}
+	}
+	else
+	{
+		keys_stati[keycode] = 0.0;
+		return false;
+	}
+	return false;		
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Language</category>
+    <name>Memory Copy Move</name>
+    <tag>copy</tag>
+    <tag>vector</tag>
+    <syntax />
+    <code>var ker = CVmExternDll("kernel32.dll");
+ker.__AddFunction(C_VOID,"movememoryfv","RtlMoveMemory",C_PFLOAT,C_PFLOAT,C_SIZE); // bytes
+ker.__AddFunction(C_VOID,"copymemoryfv","RtlCopyMemory",C_PFLOAT,C_PFLOAT,C_SIZE); // bytes
+ker.__AddFunction(C_VOID,"zeromemoryfv","RtlZeroMemory",C_PFLOAT,C_SIZE); // bytes</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Language</category>
+    <name>Vector Copy</name>
+    <tag>vector</tag>
+    <syntax />
+    <code>function copyvec(dst,src,off,n,doff)
+{
+    if(doff != Void)
+    for(var i = 0; i &lt; n; i++)
+        dst[i+doff] = src[i+off];
+    else
+    for(var i = 0; i &lt; n; i++)
+        dst[i] = src[i+off];
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Language</category>
+    <name>Debug Box</name>
+    <tag>debug</tag>
+    <syntax />
+    <code>//----------------------------------------------------------------------
+class DebugBox
+//----------------------------------------------------------------------
+{
+	var items_array;
+	var last_item;
+	var startx;
+	var starty;
+	var linespacing;
+	var font;
+	var fontsize;
+	var updirection;
+	var xsize;
+	var margin_left;
+	var margin_bottom;	
+	var color;
+	var fill_color;
+	
+	Initialize();
+	SetItem(t,v);
+	SetPosition(x,y);
+	Draw(vx,vy);
+	SetColor(col);
+	SetFillColor(fill);
+	SetMargins(mleft, mbottom);
+};
+
+function DebugBox::Initialize()
+{
+	items_array = array(0);
+	last_item = 0;
+	xsize = 0;
+	updirection = false;
+	linespacing = 1;
+	font = "Arial";
+	fontsize = 14;
+	margin_left   = 4;
+	margin_bottom = 4;
+	color = [0.0,0.0,0.0,1.0];
+	fill_color = [1.0, 1.0, 0.5, 0.5];
+}
+
+function DebugBox::SetColor(col)
+{
+	color = col;
+}
+
+function DebugBox::SetFillColor(col)
+{
+	fill_color = col;
+}
+
+function DebugBox::SetMargins(mleft,mbottom)
+{
+	margin_left = mleft;
+	margin_bottom = mbottom;
+}
+
+function DebugBox::SetPosition(x,y)
+{
+	startx = x;
+	starty = y;
+}
+
+function DebugBox::SetItem(testo,value)
+{	
+	var testo_item = sprintf("%s: %.3f", testo, value);
+	Aadd(items_array, testo_item);
+	var lun = len(testo_item);
+	if (lun &gt; xsize) xsize = lun;
+	last_item ++;
+}
+
+function DebugBox::Draw(viewportx, viewporty)
+{
+	
+	ConsoleFont(font,fontsize);
+	
+	var vspace;
+	if (viewporty == -1)
+		vspace = linespacing * 0.02;
+	else
+	{	
+		vspace = linespacing * fontsize / viewporty;
+	}
+	var i,j;
+		
+	var startbox_x = startx-margin_left/viewportx;
+	var startbox_y = vspace*last_item + starty;	
+	var dim_x = 0.75*(xsize*fontsize)/viewportx;
+	var dim_y = startbox_y-starty+margin_bottom/viewporty ;
+	
+	ConsoleColor(fill_color[0],fill_color[1],fill_color[2],fill_color[3]);
+	ConsoleFilledRect(startbox_x,startbox_y, dim_x , dim_y);
+	ConsoleColor(color[0],color[1],color[2],color[3]);
+	ConsoleRect(startbox_x,startbox_y, dim_x , dim_y);
+	
+	for (i=0;i&lt;last_item;i++)
+	{
+		if (!updirection)
+			j = last_item - i - 1;
+		else 
+			j = i;
+			
+		ConsoleText(startx,starty+vspace*i,items_array[j]);	
+	}
+	
+	items_array = array(0);
+	last_item = 0;
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Language</category>
+    <name>Swap</name>
+    <tag>swap</tag>
+    <syntax />
+    <code>function swap (vett, i, j)
+{
+	var v = vett;
+	var temp = v[i];
+	v[i] = v[j];
+	v[j] = temp;
+	return v;
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Language</category>
+    <name>QSort</name>
+    <tag>sorting</tag>
+    <syntax />
+    <code>//-------------------------------------------
+function qsort (vettore, prim, ult, indices)
+//-------------------------------------------
+{
+	var last,v,i;
+	var vind = indices;
+	
+	if (prim &gt;= ult)
+		return vettore;
+		
+	var ind =  (prim+ult)/2;	
+	v = swap (vettore, prim, ind);
+	vind = swap (vind, prim, ind);
+	last = prim;
+	
+	for (i=prim+1;i&lt;=ult;i++) 	
+		if (v[i] &lt; v[prim])
+		{
+			last++;
+			v = swap (v, last, i);
+			vind = swap (vind, last,i);			
+		}
+	
+	v = swap (v,prim,last);
+	indices = swap (vind, prim, last);
+	
+	v =	qsort (v,prim,last-1,indices);
+	v =	qsort (v,last+1,ult,indices);
+	
+	return v;			
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Language</category>
+    <name>QSort Advanced</name>
+    <tag>sorting</tag>
+    <syntax />
+    <code>/*
+ * Sorts vettore using fx for comparison
+ *
+ * qsort(vettore,fx)
+ * qsort(vettore)
+ *
+ * Vettore can be both Array,Vector or String
+ *
+ * Fx can be:
+ * - Void in that case default "&lt;" is used
+ * - function name for global Callback
+ * - object.less(x,y) for object (faster than Callback)
+ *
+ * By Emanuele Ruffaldi 2009/12/20
+ * Improvement over Marcello Carrozzino code
+ *
+ * TODO: return indices
+ */
+function qsort(vettore, fx, prim, ult, indices)
+{
+	var last,v,tmp;
+    var vind;
+    
+    if(prim == Void)
+    {
+        prim = 0;
+        ult = len(vettore)-1;
+        indices = Array(ult+1);
+        for(var i = 0; i &lt; ult; i++)
+            indices[i] = i;
+        vind = indices;
+    }
+    else
+    {
+        if (prim &gt;= ult)
+            return vettore;
+        vind = indices;
+    }
+    
+	var ind =  (prim+ult)/2;
+	//v = swap (vettore, prim, ind);
+    v = vettore;
+    tmp = v[ind];
+    v[ind] = v[prim];
+    v[prim] = tmp;
+	//vind = swap (vind, prim, ind);
+    tmp = vind[ind];
+    vind[ind] = vind[prim];
+    vind[prim] = tmp;
+	last = prim;
+	
+    if(fx == Void)
+    {
+        for (var i=prim+1;i&lt;=ult;i++) 	
+            if (v[i] &lt; v[prim])
+            {
+                last++;
+                //v = swap (v, last, i);
+                tmp = v[last];
+                v[last] = v[i];
+                v[i] = tmp;
+                //vind = swap (vind, last,i);			
+                tmp = vind[last];
+                vind[last] = vind[i];
+                vind[i] = tmp;
+            }    
+    }
+    else if(valtype(fx) == "S")
+    {
+        for (var i=prim+1;i&lt;=ult;i++) 	
+            if (Callback(fx,v[i],v[prim])) 
+            {
+                last++;
+                //v = swap (v, last, i);
+                tmp = v[last];
+                v[last] = v[i];
+                v[i] = tmp;
+                //vind = swap (vind, last,i);			
+                tmp = vind[last];
+                vind[last] = vind[i];
+                vind[i] = tmp;
+            }
+    }
+    else 
+    {
+        for (var i=prim+1;i&lt;=ult;i++) 	
+            if (fx.less(v[i],v[prim]))
+            {
+                last++;
+                //v = swap (v, last, i);
+                tmp = v[last];
+                v[last] = v[i];
+                v[i] = tmp;
+                //vind = swap (vind, last,i);			
+                tmp = vind[last];
+                vind[last] = vind[i];
+                vind[i] = tmp;
+            }
+    }
+	// v = swap (v,prim,last);
+    tmp = v[prim];
+    v[prim] = v[last];
+    v[last] = tmp;
+	//vind = swap (vind, prim, last);
+    tmp = vind[prim];
+    vind[prim] = vind[last];
+    vind[last] = tmp;
+	v =	qsort (v,fx,prim,last-1,vind);
+	v =	qsort (v,fx,last+1,ult,vind);
+	return v;
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Language</category>
+    <name>Array Index</name>
+    <tag>array</tag>
+    <syntax />
+    <code>function aindexOf(a,v)
+{
+	var n = len(a);
+	var i;
+	for(i = 0; i &lt; n; i++)
+		if(a[i] == v)
+			return i;
+	return Void;
+}
+
+/// returns true if the array contains the specified value
+/// TODO: it uses sequential search
+function acontains(a, v)
+{
+	return aindexOf(a,v) != Void;
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Language</category>
+    <name>Array Delete Value</name>
+    <tag>array</tag>
+    <syntax />
+    <code>/// deletes a value
+function adelValue(a,v)
+{
+	var i = aindexOf(a,v);
+	if(i != Void)
+	{
+		adel(a,i);
+		return true;
+	}
+	else
+		return false;
+}
+
+/// clones an array
+function adelValues(a,v)
+{
+	var k = len(a);
+	for(var i = 0; i &lt; k; i++)
+	{
+		if(a[i] == v)
+		{
+			adel(a,i);
+			i--;
+		}
+	}
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Language</category>
+    <name>Bit Operations</name>
+    <tag>binary</tag>
+    <tag>not</tag>
+    <tag>shift</tag>
+    <syntax />
+    <code>function shl(v,n)
+{
+	return int(v*(2^n));
+}
+
+function shr(v,n)
+{
+	return int(v/(2^n));
+}
+
+function shl1(v,n)
+{
+	return v*2;
+}
+
+function shr1(v,n)
+{
+	return v/2;
+}
+
+function bitvalue(v)
+{
+	return int(2^v);
+}
+
+function bitnot(v)
+{
+	return -v - 1;
+}
+
+/// removes mask from v
+function bitremove(v, mask)
+{
+	return v &amp; bitnot(mask);
+}
+
+/// TODO faster way exist I know
+function bitcount(v)
+{
+	var n = 0;
+	while(v != 0)
+	{
+		if((v &amp; 1) == 1)
+			n++;
+		
+		v = shr1(v);		
+		// &gt;&gt;&gt; is missing
+		//v =  (v &gt;&gt; 1) &amp; ~0x80000000;
+		//v =  (v &gt;&gt; 1);
+	}
+	return n;
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Language</category>
+    <name>Trim String</name>
+    <tag>string</tag>
+    <syntax />
+    <code>function trim(p)
+{
+	// eat spaces befor and after! we need trim/strip!
+	var i1 = 0;
+	for(var j = 0; j &lt; len(p); j++) if(p[j] != " " &amp;&amp; p[j] != "\t") { i1 = j; break;} if(i1 != 0) { p = right(p, len(p)-i1);}
+	var i2 = -1;
+	for(var j = len(p)-1; j &gt;= 0; j--) if(p[j] != " "&amp;&amp; p[j] != "\t") { i2 = j; break; } if(i2 != -1) p = left(p,i2+1);
+	return p;
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Languiage</category>
+    <name>Sub String</name>
+    <tag>string</tag>
+    <syntax />
+    <code>function substr(s, first, length)
+{
+	var ll = len(s);
+	if(length == Void)
+		length = ll-first;
+	else if(first+length &gt; ll)
+		length = ll-first;	
+	if(first == 0)
+		return left(s,length);
+	else if(first+length == ll)
+		return right(s, length);
+	else
+	{
+		// TODO improve
+		return left(right(s, ll-first), length);
+	}
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Math</category>
+    <name>Unfirom Random</name>
+    <tag>random</tag>
+    <syntax />
+    <code>function uniformrand(a,b)
+{
+	var r = Rand(10000);
+	return a + ((b-a)*(r % 10000)/10000.0);
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Math</category>
+    <name>Spherical Coordinates</name>
+    <tag>polar</tag>
+    <syntax />
+    <code>function polar2xyz(r,p,t)
+{	
+	var sp = sin(p);
+	return [r*cos(t)*sp,r*sin(t)*sp,r*cos(p)];
+}
+
+function xyz2polar(x,y,z)
+{
+	var r = modulus([x,y,z]);
+	if (r == 0)
+		return [0,0,0];
+	else
+	{
+		return [r,atan2(y,x),acos(z/r)];
+	}
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Math</category>
+    <name>Radians</name>
+    <tag>degree radians</tag>
+    <syntax />
+    <code>function D2R(v)
+{
+	return v*pi/180;
+}
+
+function R2D(v)
+{
+	return v*180/pi;
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Math</category>
+    <name>Map Range</name>
+    <tag>range</tag>
+    <syntax />
+    <code>function maprange(frommin,frommax,tomin,tomax)
+{
+	var x= (tomax-tomin)/(frommax-frommin);
+	return [x,tomax-frommax*x];
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Math</category>
+    <name>Angle between Vectors</name>
+    <tag>vector</tag>
+    <syntax />
+    <code>/// returns the angle between two vectors 
+/// @param v1 the first vector
+/// @param v2 the second vector
+///
+/// sin alpha = ||a x b|| / |a| |b| 
+/// cos alpha = a.b / |a| |b|
+///
+/// tg alpha = || a x b || / a.b
+///
+/// a x b = [0, 0, ax*by-bx*ay] 
+function angleBetween(v1,v2)
+{
+	var dot = v1*v2;
+	var cross = v1^v2;
+	var r = atan2(cross,dot);
+	return dot &lt; 0 ? r + pi : r;
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Math</category>
+    <name>Mix Values</name>
+    <tag>mix</tag>
+    <syntax />
+    <code>/// performs the blend between two points
+/// a*(1-t)+b*t
+function mix(a,b,t)
+{
+	return a+(b-a)*t;
+}
+
+/// performs the blend over the normalized distance between two points
+/// N = |b-a|
+/// a + (b-a)*t/N
+function mixN(a,b,t)
+{
+	return a+Norm(b-a)*t;
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Math</category>
+    <name>Clamp</name>
+    <tag>clamp</tag>
+    <syntax />
+    <code>/// clamps the value v between minv and maxv
+/// equivalent to min(max(v, maxv), minv)
+///
+/// @param v can be a vector
+/// @param minv minimal scalar value
+/// @param maxv maximal scalar value
+function clamp(v, minv,maxv)
+{
+	if(valtype(v) == "V")
+	{
+		var i = 0;
+		var n = len(v);
+		var r = v;
+		for(i = 0; i &lt; n; i++)
+		{
+			var vv = v[i];
+			r[i] = vv &lt; minv ? minv : vv &gt; maxv ? maxv : vv;
+		}
+		return r;
+	}
+	else
+	{
+		return v &lt; minv ? minv : v &gt; maxv ? maxv : v;
+	}
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Math</category>
+    <name>Remainder</name>
+    <tag>fraction</tag>
+    <syntax />
+    <code>/// returns x - y*floor(x/y)
+function mod(x, y)
+{
+	return x - y*floor(x/y);
+}
+
+/// returns the fractional part of x
+function fract(x)
+{
+	return x - floor(x);
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Math</category>
+    <name>Shuffle</name>
+    <tag>array</tag>
+    <tag>random</tag>
+    <syntax />
+    <code>// accepts:
+// - integer =&gt; random permutations of [0,n)
+// - vector or array =&gt; shuffle items and returns of same type if vector otherwise array
+function shuffle(n)
+{
+	var r;
+	if(valtype(x) == "A") // array just copy
+		r = x;
+	else if(valtype(x) == "I") // iteger range [0,n)
+	{
+		r = Array(x);
+		for(var i = 0; i &lt; x; i++)
+			r[i] = i;
+	}
+	else if(valtype(x) == "V") // vector map to vector
+	{
+		r = Array(len(x));
+		for(var i = 0; i &lt; len(x); i++)
+			r[i] = x[i];
+	}
+
+	// output as vector if input vector	
+	var ra;
+	if(valtype(x) == "V")
+		ra = Vector(len(r));
+	else
+		ra = Array(len(r));
+	
+	var k = 0;			
+	while(len(r) &gt; 1)
+	{
+		var j = rand(len(r)-1);	 // rand is inclusive [0,n]
+		ra[k++] = r[j]; // store index in ra
+		adel(r,j); // remove index from r
+	}
+	ra[k++] = r[0];
+	return ra;
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Math</category>
+    <name>Clamp 2D Vector</name>
+    <tag>clamp</tag>
+    <tag>vector</tag>
+    <syntax />
+    <code>function clampxy(xy,mins,maxs)
+{
+	return [xy.x &lt; mins.x ? mins.x : xy.x &gt; maxs.x ? maxs.x, xy.y &lt; mins.y ? mins.y : xy.y &gt; maxs.y ? maxs.y];
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>NetRender</category>
+    <name>Invoke Net Render</name>
+    <tag>netrender</tag>
+    <syntax />
+    <code>#define C_PTR C_INT
+function OnInit()
+{
+	var opengl32dll = CVmExternDll("opengl32.dll");
+	opengl32dll.__AddFunction(C_PTR,"wglGetProcAddress",C_PSTR);
+	opengl32dll.__AddFunction(C_PSTR,"glGetString",C_INT);
+	var s = opengl32dll.glGetString(0x1F03);
+	var present = false;
+	foreach(var v in Split(s," "))
+	{
+		if(v == "XVR_network_renderer")
+		{
+			present = true;
+		}
+	}
+	OutputLN("Extensions ",s);
+
+	if(present)
+	{
+		var p = opengl32dll.wglGetProcAddress("XVRNetworkRendererEnable");
+		opengl32dll.__AddFunction(C_VOID,"XVRNetworkRendererEnable",C_INT);
+		opengl32dll.__AddFunction(C_VOID,"XVRNetworkRendererDisable",C_INT);
+		opengl32dll.__AddFunction(C_INT,"XVRNetworkRenderer",C_INT,C_INT,C_PTR,C_INT,C_PTR,C_INT,C_PTR,C_INT,C_PTR,C_INT,C_PTR,C_INT,C_PTR);
+	}
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>NetRender</category>
+    <name>Slave DLL</name>
+    <tag>netrender</tag>
+    <tag>slave</tag>
+    <syntax />
+    <code>#include &lt;Script3D.h&gt;
+
+var slavedll;
+function OnInit()
+{
+	SetLocalDir(".");
+	slavedll = CVmExternDll("slavedll.dll");
+	slavedll.__AddFunction(C_VOID,"InjInit");
+	slavedll.__AddFunction(C_VOID,"InjDraw");
+	slavedll.__AddFunction(C_VOID,"InjClose");
+	slavedll.InjInit();
+}
+function OnFrame()
+{
+	slavedll.InjDraw();
+}
+function OnExit()
+{
+	slavedll.InjClose();
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Performance</category>
+    <name>FPS</name>
+    <tag>framerate</tag>
+    <syntax />
+    <code>var FpsCounterTime = 500;
+var FpsCounterFrameCount = 0;
+
+/// one function for managing the Frame Per Second Counter
+/// just invoke it in your place and receive the value
+function FpsCounter()
+{
+	static var startTime = 0, frameCount = 0,lastValue = 0;
+	var now = GetTime();
+	frameCount++;
+	FpsCounterFrameCount++;
+	if(startTime == 0)
+	{
+		startTime = now;
+		lastValue = 0;
+		return 0;
+	}
+	if((now-startTime) &gt; FpsCounterTime)
+	{
+		if(frameCount == 1)
+		{
+			FpsCounterTime = FpsCounterTime*2;
+			return lastValue;
+		}
+		lastValue = (1000*frameCount)/(now-startTime);
+		frameCount = 0;
+		startTime = now;
+	}
+	return lastValue;
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Performance</category>
+    <name>Time Measure Class</name>
+    <tag>timer</tag>
+    <syntax />
+    <code>#ifndef TIMEMEASURE_H
+#define TIMEMEASURE_H
+
+class TimeMeasure
+{
+	var _start,elapsed;
+	stop();
+	start();
+};
+
+function TimeMeasure::TimeMeasure()
+{
+	start();
+}
+
+function TimeMeasure::start()
+{
+	_start = GetPerformanceTimer();
+}
+
+function TimeMeasure::stop()
+{
+	elapsed = GetPerformanceTimer()-_start;
+	return elapsed;
+}
+
+#endif</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Performance</category>
+    <name>Native Timing</name>
+    <tag>native</tag>
+    <tag>timing</tag>
+    <syntax />
+    <code>#ifndef XVRTIMES_H_S3D
+#define XVRTIMES_H_S3D
+
+// same as GetTime() but absolute, not application relative
+function timeGetTime()
+{
+	static var dll;
+	if(dll == Void)
+    {
+		dll = CVmExternDll("winmm.dll");
+		dll.__AddFunction(C_INT,"timeGetTime");
+		dll.__AddFunction(C_INT,"timeBeginPeriod",C_INT);
+        //dll.timeBeginPeriod(1); // not needed
+	}
+	return dll.timeGetTime();
+}
+
+// GetPerformanceTimer() returns seconds this one is ABSOLUTE and milliseconds
+function GetPerformanceTimerNativeMS()
+{
+	static var dll;
+    static var frequency = 1.0;
+    var buf = "    ";
+	if(dll == Void)
+    {
+		dll = CVmExternDll("kernel32.dll");
+		dll.__AddFunction(C_INT,"QueryPerformanceCounter",C_PSTR); // TODO requires integer array
+        dll.__AddFunction(C_INT,"QueryPerformanceFrequency",C_PSTR); // TODO requires integer array
+        dll.QueryPerformanceFrequency(&amp;buf);
+        frequency = asc(buf[0])+asc(buf[1])*256+asc(buf[2])*65536+asc(buf[3])*16777216+asc(buf[4])*4294967296+asc(buf[5])*1099511627776+asc(buf[6])*281474976710656+asc(buf[7])*72057594037927936;
+	}
+    dll.QueryPerformanceCounter(&amp;buf);    
+    var count = asc(buf[0])+asc(buf[1])*256+asc(buf[2])*65536+asc(buf[3])*16777216+asc(buf[4])*4294967296+asc(buf[5])*1099511627776+asc(buf[6])*281474976710656+asc(buf[7])*72057594037927936;
+	return count/(frequency/1000.0); // milliseconds
+}
+
+// GetPerformanceTimer() returns seconds this one is ABSOLUTE and milliseconds
+function GetPerformanceTimerNativeSec()
+{
+	return GetPerformanceTimerNativeMS()/1000.0;
+}
+
+
+#endif</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Rotations</category>
+    <name>PosQuat2Matrix</name>
+    <tag>quaternion matrix</tag>
+    <syntax />
+    <code>function PosQuat2Matrix(pos,quat)
+{
+	var ma = QuaternionToMatrix3(quat);
+	return [ma[0],ma[1],ma[2],0,ma[3],ma[4],ma[5],0,ma[6],ma[7],ma[8],0,pos[0],pos[1],pos[2],1];
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>System</category>
+    <name>Environment Variables</name>
+    <tag>env</tag>
+    <syntax />
+    <code>var ker = CVmExternDLL("kernel32.dll"); 
+ker.__AddFunction(C_INT,"SetEnvironmentVariableA",C_PSTR,C_PSTR); 
+
+ker.SetEnvironmentVariableA("3DTOUCH_BASE","");</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>System</category>
+    <name>Affinity Mask</name>
+    <tag>cpu</tag>
+    <tag>multiprocessor</tag>
+    <tag>process</tag>
+    <syntax />
+    <code>function InitMultithread()
+{
+    var x = CVmExternDll("kernel32.dll");
+    x.__AddFunction(C_INT,"GetCurrentProcess");
+    x.__AddFunction(C_INT,"GetCurrentProcessId");
+    x.__AddFunction(C_INT,"GetCurrentThread");
+    x.__AddFunction(C_INT,"GetCurrentThreadId");
+    x.__AddFunction(C_INT,"SetProcessAffinityMask",C_INT,C_INT);
+    x.__AddFunction(C_INT,"SetThreadAffinityMask",C_INT,C_INT);
+    return x;
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>System</category>
+    <name>Webmode Check</name>
+    <tag>webmode</tag>
+    <syntax />
+    <code>function WebModeCheck()
+{
+	var x = 100;
+	var s = GetScriptUrl();
+	return s[0] == "h" &amp;&amp; s[1] == "t" &amp;&amp; s[2] == "t";			
+
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>System</category>
+    <name>ExitProcess</name>
+    <tag>process</tag>
+    <syntax />
+    <code>function ExitProcess()
+{
+    var ker = CVmExternDll("kernel32.dll");
+    ker.__AddFunction(C_VOID,"ExitProcess",C_INT);
+    ker.ExitProcess(0);
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>System</category>
+    <name>Priority</name>
+    <tag>process</tag>
+    <tag>thread</tag>
+    <syntax />
+    <code>function BoostMe()
+{
+	static var ker ;
+	if(ker == Void)
+	{
+		// process
+		// above 0x00008000
+		// normal 0x00000020
+		// high  0x00000080
+		//
+		// thread: +-1/2 
+	 	ker = CVmExternDll("kernel32.dll");
+    	ker.__AddFunction(C_INT,"GetCurrentThread");
+    	ker.__AddFunction(C_INT,"GetCurrentProcess");
+    	ker.__AddFunction(C_INT,"SetPriorityClass",C_INT,C_INT);
+    	ker.__AddFunction(C_INT,"SetThreadPriority",C_INT,C_INT);
+    	OutputLN("Boosted: ",ker.SetPriorityClass(ker.GetCurrentProcess(),0x00008000));
+    	OutputLN("Boosted Thread:",ker.SetThreadPriority(ker.GetCurrentThread(),2));
+    	
+	 }
+
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>System</category>
+    <name>Register message for OnEvent</name>
+    <tag>OnEvent</tag>
+    <tag>message</tag>
+    <syntax />
+    <code>#define HWND_BROADCAST 0xFFFF
+	var user = CVmExternDll("user32.dll");
+	user.__AddFunction(C_INT,"RegisterWindowMessageA","RegisterWindowMessage",C_PSTR);
+	user.__AddFunction(C_INT,"SendMessageA","SendMessage",C_INT,C_INT,C_INT,C_INT);
+	user.__AddFunction(C_INT,"PostMessageA","PostMessage",C_INT,C_INT,C_INT,C_INT);
+	uu = user.RegisterWindowMessage("ciaomondo");</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>System</category>
+    <name>Spawn Process</name>
+    <tag>os process</tag>
+    <syntax />
+    <code>#ifndef SPAWNPROCES_H_S3D
+#define SPAWNPROCES_H_S3D
+
+var ker;
+var shell;
+
+// core functions
+function InitProcessSystem()
+{
+	 ker = CVmExternDLL("kernel32.dll");
+	 shell = CVmExternDLL("shell32.dll");
+	
+	ker.__AddFunction(C_INT,"CreateProcessA",C_PSTR,C_PSTR,C_INT,C_INT,C_INT,C_INT,C_INT,C_INT,C_PSTR,C_PSTR);
+	ker.__AddFunction(C_INT,"CloseHandle",C_INT);
+	ker.__AddFunction(C_INT,"GetLastError");
+	ker.__AddFunction(C_INT,"RtlMoveMemory","CopyMemoryi2s",C_PSTR,C_PINT,C_INT);
+	ker.__AddFunction(C_INT,"RtlMoveMemory","CopyMemorys2i",C_PINT,C_PSTR,C_INT);
+	ker.__AddFunction(C_INT,"GetExitCodeProcess",C_INT,C_PINT);
+	ker.__AddFunction(C_INT,"RtlZeroMemory",C_PSTR,C_INT);
+	ker.__AddFunction(C_INT,"WaitForSingleObject",C_INT,C_INT);
+	ker.__AddFunction(C_INT,"TerminateProcess",C_INT,C_INT); // by handle
+	
+	shell.__AddFunction(C_INT,"ShellExecuteA",C_INT,C_PSTR,C_PSTR,C_INT,C_INT);
+}
+
+// only when no control
+function ShellExecute(op,file,params)
+{
+	// last params
+	// hide=0
+	// maximize=3
+	// show=5
+	// shownormal=1
+	return shell.ShellExecuteA(0,op,file,params,0,5);
+}
+
+function str2i32(s)
+{
+	var i = 0;
+	ker.CopyMemorys2i(&amp;i,&amp;s,4);
+	return i;
+}
+
+function i322str(i)
+{
+	var s = Space(4);
+	ker.CopyMemoryi2s(&amp;s,&amp;i,4);
+	return s;
+}
+
+function ZeroStr(n)
+{
+	var s = Space(n);
+	ker.RtlZeroMemory(&amp;s,n);
+	return s;
+	
+}
+
+
+function spsubstr(s, first, length)
+{
+	var ll = len(s);
+	if(length == Void)
+		length = ll-first;
+	else if(first+length &gt; ll)
+		length = ll-first;	
+	if(first == 0)
+		return left(s,length);
+	else if(first+length == ll)
+		return right(s, length);
+	else
+	{
+		// TODO improve
+		return left(right(s, ll-first), length);
+	}
+}
+
+
+// pass filename (full exe path) then commandline
+// returns file handle to BE closed using CloseHandle
+function CreateProcess(filename,commandline,option)
+{
+	if(option == Void)
+		option = 0;
+	OutputLN(str2i32(i322str((100))));
+	var si = i322str(17*4) + ZeroStr(16*4); // first is the size of the file	
+	var pia = ZeroStr(4*4); // process,thread,pid,tid
+	OutputLN("Spawning...");
+	var h = ker.CreateProcessA(filename,commandline,0,0,0,0,0,0,&amp;si,&amp;pia);
+	if(h == 0)
+	{
+		OutputLN("Error ",ker.GetLastError());
+		return 0;
+	}
+		
+	// extract the rest and close the hthread
+	// hProcess
+	// hThread
+	// ..
+	var hThread = str2i32(spsubstr(pia,4,4));
+	var hProcess =str2i32(spsubstr(pia,0,4));
+	var pid =str2i32(spsubstr(pia,8,4));
+	ker.CloseHandle(hThread);
+	OutputLN("PID is ",pid);
+	return hProcess;
+}
+
+function GetExitCodeProcess(h)
+{
+	var i = 0;
+	ker.GetExitCodeProcess(h,&amp;i);
+	return i;
+}
+
+function CloseHandle(h)
+{
+	return ker.CloseHandle(h);
+}
+
+// check if process terminated
+function WaitForProcess(h,time)
+{
+	if(time == Void)
+		time = -1;
+	// 0x00000080L abandoned
+	// 0 ok
+	// 0x00000102L timeout
+	// 0xFFFFFFFF failed
+	var q = ker.WaitForSingleObject(h,time);
+	
+	// ERROR_INVALID_HANDLE is 6
+	if(q == -1)
+	{
+	}
+	return q == 0;
+}
+
+#endif</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Transformations</category>
+    <name>GetFullMatrix</name>
+    <tag>cvmobj</tag>
+    <syntax />
+    <code>function GetFullMatrix(obj)
+{
+	var rot = obj.GetRotationMatrix();
+	var pos = obj.GetPosition();
+	rot[12] = pos.x;
+	rot[13] = pos.y;
+	rot[14] = pos.z;
+	return rot;
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Transformations</category>
+    <name>MatrixTranslation</name>
+    <tag>matrix</tag>
+    <syntax />
+    <code>function MatrixTranslation(t)
+{
+	var r = Vector(16);
+	r[0] = r[5] = r[10] = r[15] = 1;
+	r[12] = t.x;
+	r[13] = t.y;
+	r[14] = t.z;
+	return r;
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Transformations</category>
+    <name>MatrixRotationDir</name>
+    <tag>matrix</tag>
+    <syntax />
+    <code>function MatrixRotationDir(angdeg,x,y,z)
+{
+	glPushMatrix();
+	glLoadIdentity();
+	glRotate(angdeg,x,y,z);
+	var r = glGet(GL_MODELVIEW_MATRIX);
+	glPopMatrix();
+	return r;
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>Transformations</category>
+    <name>MatrixRotationXYZ</name>
+    <tag>matrix</tag>
+    <syntax />
+    <code>function MatrixRotationXYZ(x,y,z)
+{
+	glPushMatrix();
+	glLoadIdentity();
+	glRotate(x,1,0,0);
+	glRotate(y,0,1,0);
+	glRotate(z,0,0,1);
+	var r = glGet(GL_MODELVIEW_MATRIX);
+	glPopMatrix();
+	return r;
+}</code>
+    <comment />
+  </snippet>
+  <snippet>
+    <category>View</category>
+    <name>Camera Apply Matrix</name>
+    <tag>camera</tag>
+    <tag>matrix</tag>
+    <syntax />
+    <code>function SaveCameraState()
+{
+	var v = glGet(GL_MODELVIEW_MATRIX);
+	var p = glGet(GL_PROJECTION_MATRIX);
+	return [v,p];
+}
+
+function ApplyCameraState(s)
+{
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glMultMatrix(s[1]);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glMultMatrix(s[0]);
+}
+
+function CameraGetCameraState(cam)
+{
+	var ma;
+	if(cam == Void)
+	{
+	
+	}
+	else
+	{
+	
+	}
+
+	// REBUILD projection ...
+}</code>
+    <comment />
+  </snippet>
+</jcc-snippets-package>
+

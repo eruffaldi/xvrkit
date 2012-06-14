@@ -1,0 +1,272 @@
+/**
+ * Fast and Furious SQLITE3 ExtDLL binding
+ *
+ * by Emanuele Ruffaldi 2012
+ 
+ *
+ * Usage:
+ 
+  var a = Sqlite3DB(":memory:");
+  a.exec("CREATE VIRTUAL TABLE item USING fts4(pid, text);");
+  a.exec("INSERT INTO item(pid, text) VALUES(53, 'SQLite is a software...');");
+  var s = a.prepare("SELECT * FROM item WHERE text MATCH 'sqlite';")
+  while(s.step())
+	OutputLN(s.getArray());
+	
+ */
+#ifndef SQLITE3_H_S3D
+#define SQLITE3_H_S3D
+
+//  SQLITE_BUSY, SQLITE_DONE, SQLITE_ROW, SQLITE_ERROR, or SQLITE_MISUSE.
+// http://www.sqlite.org/c3ref/c_abort_rollback.html
+// http://www.sqlite.org/c3ref/c_abort.html
+
+#define SQLITE_ROW 100
+var sqlite3;
+function Sqlite3Init()
+
+{
+	if(sqlite3 != Void)
+		return;
+	sqlite3 = CVmExternDll("sqlite3.dll");
+	
+	// http://www.sqlite.org/c3ref/open.html
+	sqlite3.__AddFunction(C_INT, "sqlite3_open_v2",C_PSTR,C_PINT,C_INT,C_INT); 
+	sqlite3.__AddFunction(C_INT, "sqlite3_open",C_PSTR,C_PINT);
+	sqlite3.__AddFunction(C_INT, "sqlite3_open",C_PSTR,C_PINT);
+	sqlite3.__AddFunction(C_INT, "sqlite3_close",C_INT); 
+	
+	sqlite3.__AddFunction(C_INT, "sqlite3_free",C_INT); 
+	sqlite3.__AddFunction(C_INT, "sqlite3_finalize",C_INT); 
+	sqlite3.__AddFunction(C_INT, "sqlite3_step",C_INT); 
+	sqlite3.__AddFunction(C_INT, "sqlite3_reset",C_INT); 
+	sqlite3.__AddFunction(C_PSTR, "sqlite3_errmsg",C_INT); 
+	sqlite3.__AddFunction(C_INT, "sqlite3_errcode",C_INT); 
+	sqlite3.__AddFunction(C_INT, "sqlite3_extended_errcode",C_INT); 
+	sqlite3.__AddFunction(C_INT, "sqlite3_column_count",C_INT); 
+	sqlite3.__AddFunction(C_INT, "sqlite3_column_type",C_INT,C_INT); 
+	sqlite3.__AddFunction(C_INT, "sqlite3_column_int",C_INT,C_INT); 
+	sqlite3.__AddFunction(C_PSTR, "sqlite3_column_name",C_INT,C_INT); 
+	sqlite3.__AddFunction(C_DOUBLE, "sqlite3_column_double",C_INT,C_INT); 
+	sqlite3.__AddFunction(C_PSTR, "sqlite3_column_text",C_INT,C_INT); 
+	sqlite3.__AddFunction(C_INT, "sqlite3_column_bytes",C_INT,C_INT);  // size 
+	sqlite3.__AddFunction(C_INT, "sqlite3_bind_parameter_count",C_INT,C_INT);  // size 
+	sqlite3.__AddFunction(C_PSTR, "sqlite3_column_blob",C_INT,C_INT);  // size 
+	sqlite3.__AddFunction(C_INT, "sqlite3_bind_double",C_INT,C_INT,C_DOUBLE);  // size 
+	sqlite3.__AddFunction(C_INT, "sqlite3_bind_int",C_INT,C_INT,C_DOUBLE);  // size 
+	sqlite3.__AddFunction(C_INT, "sqlite3_bind_null",C_INT,C_INT);  // size 
+	sqlite3.__AddFunction(C_INT, "sqlite3_bind_text",C_INT,C_INT,C_PSTR,C_INT,C_INT);  // size 
+	sqlite3.__AddFunction(C_INT, "sqlite3_bind_blob",C_INT,C_INT,C_PSTR,C_INT,C_INT);  // size 
+	sqlite3.__AddFunction(C_INT, "sqlite3_bind_parameter_index",C_INT,C_PSTR);  // size 
+	
+	// http://www.sqlite.org/c3ref/exec.html
+	sqlite3.__AddFunction(C_INT, "sqlite3_exec", C_INT, C_PSTR, C_INT, C_INT, C_INT);
+	
+	// http://www.sqlite.org/c3ref/prepare.html
+	sqlite3.__AddFunction(C_INT, "sqlite3_prepare", C_INT, C_PSTR, C_INT, C_PINT, C_PINT);
+}
+
+class Sqlite3Db
+{
+	var db; // db handle
+	
+	exec(name); // executes any SQL statement with no results
+	isValid(); // check if valid
+	close(); // closes db
+	prepare(sql); // returns Sqlite3Stmt for sql statement
+};
+
+class Sqlite3Stmt
+{
+	var st; // handle
+	 
+	close(); // close
+	rewind(); // reset the statement
+	step(); // next step
+	getColumnCount(); // number of columns
+	
+	bindArray(a); // binds a full array to parameters
+	bind(i,value); // bind by index or name the given value 
+	getParamCount(); // number of parameters
+	
+	getText(icol); // return text column
+	getInt(icol); // return int  column
+	getFloat(icol); // return float
+	getName(icol); // return colum name
+	getNames(); // returns column names
+	getArray(); // returns as array
+	get(i); // returns given value
+};
+
+function Sqlite3Db::Sqlite3Db(name)
+{
+	db = 0;
+	Sqlite3Init();
+	sqlite3.sqlite3_open(name,&db);
+}
+
+function Sqlite3Db::isValid()
+{
+	return db != 0;
+}
+
+function Sqlite3Db::~Sqlite3Db()
+{
+	close();
+}
+
+function Sqlite3Db::close()
+{
+	sqlite3.sqlite3_close(db);
+	db = 0;
+}
+
+function SQlite3Stmt::getColumnCount()
+{
+	return sqlite3.sqlite3_column_count(st);
+}
+
+function Sqlite3Stmt::~Sqlite3Stmt()
+{
+	close();
+}
+
+function Sqlite3Stmt::close()
+{
+	sqlite3.sqlite3_finalize(st);
+	st = 0;
+}
+
+function Sqlite3Db::exec(sql)
+{
+	var errmsg = 0;
+	var r = sqlite3.sqlite3_exec(db, sql, 0, 0, &errmsg);
+	// errmsg contains pointer to string
+	// TODO print it
+	sqlite3.sqlite3_free(errmsg);
+	return r;
+}
+
+function Sqlite3Stmt::rewind()
+{
+	return sqlite3.sqlite3_reset(st);
+}
+
+function Sqlite3Stmt::step()
+{
+	return sqlite3.sqlite3_step(st) == SQLITE_ROW;
+}
+
+
+// http://www.sqlite.org/c3ref/prepare.html
+function Sqlite3Db::prepare(sql)
+{
+	var r = 0;
+	var ru = 0;
+	OutputLN("preprepare is ",db," for ", sql);
+	var rr = sqlite3.sqlite3_prepare(db, sql, -1, &r, &ru);
+	if(r != 0)
+		return Sqlite3Stmt(r);
+	else
+		return;
+}
+
+function Sqlite3Stmt::getName(i)
+{
+	return sqlite3.sqlite3_column_name(st,i);
+}
+
+function Sqlite3Stmt::get(i)
+{
+		var t = sqlite3.sqlite3_column_type(st,i);
+		switch(t)
+		{
+		case 1: //SQLITE_INTEGER:
+			return sqlite3.sqlite3_column_int(st,i);
+		case 2: //SQLITE_FLOAT:
+			return sqlite3.sqlite3_column_double(st,i);
+		case 3://SQLITE_TEXT:
+			return sqlite3.sqlite3_column_text(st,i); 
+		case 4://SQLITE_BLOB:
+			return "BLOB NOT IMPLEMENTED";
+		case 5://SQLITE_NULL:
+			return;
+		default:
+			return sprintf("unknown type %d",t);
+		}
+
+}
+
+function Sqlite3Stmt::getNames()
+{
+	var n = getColumnCount();
+	var a = Array(n);
+	for(var i = 0; i < n; i++)
+		a[i] = sqlite3.sqlite3_column_name(st,i);
+	return a;
+}
+
+function SQlite3Stmt::getFloat(i)
+{
+	return sqlite3.sqlite3_column_double(st,i);
+}
+
+function SQLite3Stmt::SQLite3Stmt(s)
+{
+	st = s;
+}
+
+function SQLite3Stmt::getArray()
+{
+	var n = getColumnCount();
+	var a = Array(n);
+	for(var i = 0; i < n; i++)
+	{
+		a[i] = get(i);
+	}
+	return a;
+
+}
+
+function SQLite3Stmt::bindArray(a)
+{
+	var n = getParamCount();
+	if(len(a) < n)
+		n = len(a);
+	for(var i = 0; i < n; i++)
+	{
+		bind(i, a[i]);
+	}
+	return a;
+}
+
+function SQLite3Stmt::getParamCount()
+{
+	return sqlite3.sqlite3_bind_parameter_count(st);
+}
+
+function SQLite3Stmt::bind(i,value)
+{
+	if(valtype(i) == "S")
+	{
+		i = sqlite3.sqlite3_bind_parameter_index(st,i);
+	}
+	switch(valtype(value))
+	{
+	case "S":
+		return sqlite3.sqlite3_bind_text(st,i,value,len(value),0);
+		break;
+	case "F":
+		return sqlite3.sqlite3_bind_double(st,i,value);
+		break;
+	case "B":
+		return sqlite3.sqlite3_bind_int(st,i,value ?1 : 0);
+		break;
+	case "I":
+		return sqlite3.sqlite3_bind_int(st,i,value);
+		break;
+	}
+}
+
+
+#endif

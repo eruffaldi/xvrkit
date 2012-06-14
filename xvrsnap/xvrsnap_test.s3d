@@ -1,0 +1,260 @@
+#include <Script3d.h>
+#include "xvrsnap.s3d"
+
+extern function SetCurrentDir;
+function CameraMoveMouseTwo();
+function drawImage(image, sx,sy,sw,sh,dx,dy,dw,dh);
+
+var drawImageQuality = true;
+
+
+
+var tex;
+
+function OnDownload()
+{
+	FileDownload("xvrsnap.dll");
+}
+
+function OnInit()
+{
+	CameraSetPosition(0,20,10);
+	CameraSetDirection(0,-0.5,-0.5);
+	OutputLN("xvrsnaptest use SPACE for Clipboard snap, f for file snap and b for buffer snap");
+}
+
+// function to draw a grid in the scene
+function DrawGrid()
+{
+	var i;
+	glLineWidth(1);
+	
+	glDisable(GL_LIGHTING);
+	glColor(0.5,0.5,0.5);
+	
+	glBegin(GL_LINES);
+	for( i= 0; i<=30; i+=5 )
+	{
+		glVertex(-i, 0 ,-i);
+		glVertex(i,0,-i );
+		
+		glVertex(i,0,-i );
+		glVertex(i,0,i );
+		glVertex(i,0,i );
+		glVertex(-i,0,i );
+		glVertex(-i,0,i );
+		glVertex(-i, 0 ,-i);
+	}
+	glEnd();
+}
+
+function OnFrame()
+{
+	CameraMoveMouseTwo();
+
+	SceneBegin();
+		glDisable(GL_ALPHA_TEST);
+		glDisable(GL_BLEND);
+		if(tex != Void)
+		{
+			drawImage(tex,0,0,10,10);
+		}
+		glColor(1,0,0);
+		glPointSize(5);
+		glBegin(GL_POINTS);
+			glVertex(0,0,0);
+		glEnd();
+		DrawGrid();
+	SceneEnd();
+
+	var k = Keyboard();
+	switch(k)
+	{
+	case " ":
+		xvrsnap("");
+		break;
+	case "f":
+		xvrsnap("xvrsnap_test");
+		OutputLN("Saved as ",xvrsnapper.snapLastName());
+		break;
+	case "b":
+		// this can be done also using glCopyTexImage2D
+		{
+			xvrsnap("<memory>");
+			OutputLN("Info ",xvrsnapper.snapLastFormat(),xvrsnapper.snapLastName()," w:",xvrsnapper.snapInfo(SNAPINFO_WIDTH)," h:",xvrsnapper.snapInfo(SNAPINFO_HEIGHT)," s:",xvrsnapper.snapInfo(SNAPINFO_SIZE));
+			var s = space(xvrsnapper.snapInfo(SNAPINFO_SIZE));
+			if(xvrsnapper.snapData(&s,len(s)) == len(s))
+			{	
+				OutputLN("Texture Created\n");
+				tex = CVmTexture(xvrsnapper.snapInfo(SNAPINFO_WIDTH),xvrsnapper.snapInfo(SNAPINFO_HEIGHT),VR_RGBA_TEXTURE);
+				glTexSubImage2D(GL_TEXTURE_2D,0,0,0,xvrsnapper.snapInfo(SNAPINFO_WIDTH),xvrsnapper.snapInfo(SNAPINFO_HEIGHT),GL_RGBA,GL_UNSIGNED_BYTE,s);
+			}
+		}
+		break;
+	}
+}
+
+/// Camera manager (using mouse)
+function CameraMoveMouseTwo()
+{
+	static var InMouseR = false, InMouseL = false;				
+	static var PrecX = 0, PrecY = 0;			
+	if (Mouse.ButtonL)
+	{
+		if (InMouseL)
+		{	
+			CameraRotate( (Mouse.X - PrecX)/100.0, 0,1,0 );
+			var CamPos = CameraGetPosition();
+			var CamDir = CameraGetDirection(); 
+			CamPos = CamPos - CamDir*((Mouse.Y - PrecY)/100.0);
+			CameraSetPosition(CamPos);
+		}
+		else
+		{
+			PrecX = Mouse.X;
+			PrecY = Mouse.Y;
+		}
+		InMouseL = true;		
+	}
+	else
+		InMouseL = false;
+
+	if (Mouse.ButtonR)
+	{
+		if (InMouseR)
+		{
+			var CamPos = CameraGetPosition();
+			CamPos[1] = CamPos[1]+( PrecY - Mouse.Y)/100.0;
+			CameraSetPosition( CamPos );
+		}
+		else
+		{
+			PrecX = Mouse.X;
+			PrecY = Mouse.Y;
+		}
+		InMouseR = true;
+	}
+	else
+		InMouseR = false;
+
+}
+
+/// draws an image using 2D concepts
+/// it provides some overloading features as well
+/// 
+///
+/// Overloading:
+/// dx,dy					 place in a specific position sized (1,1) and taking all of the original
+/// dx,dy,dw,dh				 place with size
+/// sx,sy,sw,sh,dx,dy,dw,dh  full placement specification
+///
+/// @param image the texture object
+/// @param sx		the source x
+/// @param sy		the source y
+/// @param sw		the source w
+/// @param sh		the source h
+/// @param dx		the origin
+/// @param dy		the origin
+/// @param dw		the width. If it is -1 then it uses dh and the ratio of the texture
+/// @param dh		the height. If it is -1 then it uses dw and the ratio of the texture
+/// Non rectangular texture: if a texture comes from an unscaled image the size for the first overload is considered
+/// with the ratio
+/// @return the rectangle generated
+///
+/// External Control:
+/// - drawImageQuality set to true if required bilinear
+/// - glColor for the interpolation
+///
+/// TODO test: transparent rendering and blend rendering
+function drawImage(image, sx,sy,sw,sh,dx,dy,dw,dh)
+{
+	var v = image == Void;
+	var ew = v ? 1.0 : image.OriginalWidth;
+	var eh = v ? 1.0 : image.OriginalHeight; // image.Height;
+	var w = v ? 1.0 : image.Width;
+	var h = v ? 1.0 : image.Height;
+	var imw = ew/(1.0*w);
+	var imh = eh/(1.0*h);
+	var factor = v ? 1.0 : abs(image.OriginalWidth) / abs(image.OriginalHeight*1.0);
+//	Output(image.OriginalWidth, " ", image.OriginalHeight," ", factor, "\n");
+	
+	// 2
+	if(sw == Void)
+	{
+		dx = sx;
+		dy = sy;
+		dw = imw;
+		dh = imh;
+		sx = 0;
+		sy = 0;
+		sw = imw;
+		sh = imh;
+	}
+	// 4
+	else if(dx == Void)
+	{
+		dx = sx;
+		dy = sy;
+		dw = sw;
+		dh = sh;
+		sx = 0;
+		sy = 0;
+		sw = imw;
+		sh = imh;		
+	}
+	
+	if(dw == -1)
+	{
+		dw = dh * factor;	
+	}
+	else if(dh == -1)
+	{
+		dh = (dw * image.OriginalHeight) /image.OriginalWidth;
+	}
+	
+	if(!v)
+	{
+		glDisable(GL_LIGHTING);
+		glEnable(GL_TEXTURE_2D);
+		if(GetClassName(image) == "CVmTexture")
+			SetActiveTexture(image,drawImageQuality ?  VR_BILINEAR_FILTER: VR_NO_FILTER);
+		else
+		{
+			//SetActiveTextureVoid();
+			image.bind();
+		}
+		var tx = sx+sw;
+		var ty = sy+sh;
+		glNormal(0,0,1);
+		glBegin(GL_QUADS);
+			glTexCoord(sx,ty);
+			glVertex(dx,dy,0);
+			glTexCoord(tx,ty);
+			glVertex(dx+dw,dy,0);
+			glTexCoord(tx,sy);
+			glVertex(dx+dw,dy+dh,0);
+			glTexCoord(sx,sy);
+			glVertex(dx,dy+dh,0);
+		glEnd();
+	}
+	else
+	{
+		glDisable(GL_TEXTURE_2D);
+		glDisable(GL_LIGHTING);
+		glColor(0.5,0.5,0.5);
+		glNormal(0,0,1);
+		glBegin(GL_QUADS);
+			glVertex(dx,dy,0);
+			glVertex(dx+dw,dy,0);
+			glVertex(dx+dw,dy+dh,0);
+			glVertex(dx,dy+dh,0);
+		glEnd();
+	}
+
+	//Output(dx, " ", dy, " ", dw, " ", dh," => ", sx, " ", sy, " " , sw, " ", sh, "\n");
+	glDisable(GL_BLEND);
+	glDisable(GL_LIGHTING);
+	glDisable(GL_TEXTURE_2D);
+	return [dx, dy, dw, dh]; 
+	
+}

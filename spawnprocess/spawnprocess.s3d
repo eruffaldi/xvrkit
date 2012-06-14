@@ -1,0 +1,31 @@
+/**
+ * Spawn Process in XVR
+ *
+ * by Emanuele Ruffaldi 2012
+ */
+#include <Script3d.h>
+#include "spawnprocess.h.s3d"
+
+var myh;
+function OnInit()
+{
+	InitProcessSystem();
+	myh = CreateProcess("c:\\windows\\notepad.exe","notepad");
+	if(myh == 0)
+		Quit(0);
+	OutputLN("Spawned:",myh);
+}
+
+function OnFrame()
+{
+	if(WaitForProcess(myh,1))
+	{	
+		// when closed die
+		OutputLN(GetExitCodeProcess(myh));
+		OutputLN("bye");
+		CloseHandle(myh);
+		Quit(0);
+	}
+	SceneBegin();
+	SceneEnd();
+}
